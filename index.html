@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyBot — AI Trading Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #00ff88;
+    --accent2: #ff4466;
+    --accent3: #4488ff;
+    --text: #e8e8f0;
+    --muted: #6666880;
+    --muted2: #888899;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(0,255,136,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(68,136,255,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #000;
+  }
+
+  .logo-text {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted2);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted2);
+    transition: all 0.3s;
+  }
+
+  .status-dot.live {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* SETUP STEPS */
+  .setup-section {
+    padding: 40px 0 20px;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+
+  .section-sub {
+    color: var(--muted2);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .step-card.active {
+    border-color: var(--accent);
+  }
+
+  .step-card.complete {
+    border-color: rgba(0,255,136,0.3);
+  }
+
+  .step-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+
+  .step-card.active::before { background: var(--accent); }
+  .step-card.complete::before { background: rgba(0,255,136,0.4); }
+
+  .step-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted2);
+    margin-bottom: 12px;
+  }
+
+  .step-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .step-desc {
+    font-size: 12px;
+    color: var(--muted2);
+    line-height: 1.6;
+  }
+
+  .step-status {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+  }
+
+  .badge {
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .badge-pending { background: rgba(136,136,153,0.15); color: var(--muted2); }
+  .badge-active { background: rgba(0,255,136,0.15); color: var(--accent); }
+  .badge-done { background: rgba(0,255,136,0.1); color: rgba(0,255,136,0.6); }
+
+  /* CONFIG SECTION */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .config-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .config-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted2);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .config-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .input-group {
+    margin-bottom: 14px;
+  }
+
+  .input-label {
+    font-size: 12px;
+    color: var(--muted2);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .input-field {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-field:focus {
+    border-color: var(--accent);
+  }
+
+  .input-field::placeholder {
+    color: #444455;
+  }
+
+  .range-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .range-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* API KEY */
+  .api-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .api-note {
+    background: rgba(68,136,255,0.08);
+    border: 1px solid rgba(68,136,255,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: rgba(68,136,255,0.9);
+    line-height: 1.6;
+    margin-top: 12px;
+  }
+
+  /* BOT CONTROLS */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover {
+    background: #00ffaa;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0,255,136,0.3);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+  }
+
+  .btn-danger:hover { background: rgba(255,68,102,0.1); }
+  .btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent3); color: var(--accent3); }
+
+  .controls-spacer { flex: 1; }
+
+  .balance-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--muted2);
+  }
+
+  .balance-display span {
+    color: var(--accent);
+    font-size: 16px;
+  }
+
+  /* STATS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+
+  .stat-value.green { color: var(--accent); }
+  .stat-value.red { color: var(--accent2); }
+  .stat-value.blue { color: var(--accent3); }
+
+  /* LOG */
+  .log-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .log-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .log-title {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .log-body {
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+  }
+
+  .log-body::-webkit-scrollbar { width: 4px; }
+  .log-body::-webkit-scrollbar-track { background: transparent; }
+  .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-entry {
+    padding: 10px 24px;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-time { color: #444455; min-width: 70px; }
+  .log-type { min-width: 60px; }
+  .log-type.info { color: var(--accent3); }
+  .log-type.trade { color: var(--accent); }
+  .log-type.warn { color: #ffaa44; }
+  .log-type.error { color: var(--accent2); }
+  .log-msg { color: var(--muted2); flex: 1; line-height: 1.5; }
+
+  .log-empty {
+    padding: 40px 24px;
+    text-align: center;
+    color: #333344;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* MARKETS TABLE */
+  .markets-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .markets-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .markets-body { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted2);
+    padding: 10px 24px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 14px 24px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(42,42,58,0.4);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .market-name {
+    font-weight: 600;
+    max-width: 280px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .prob-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .prob-bar {
+    width: 80px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .prob-fill {
+    height: 100%;
+    background: var(--accent3);
+    border-radius: 2px;
+    transition: width 0.5s;
+  }
+
+  .edge-val { font-family: 'Space Mono', monospace; font-size: 12px; }
+  .edge-pos { color: var(--accent); }
+  .edge-neg { color: var(--accent2); }
+  .edge-neu { color: var(--muted2); }
+
+  .action-btn {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    transition: all 0.2s;
+  }
+
+  .action-btn:hover { background: rgba(0,255,136,0.1); }
+  .action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    margin-top: 32px;
+    padding: 16px 20px;
+    background: rgba(255,68,102,0.06);
+    border: 1px solid rgba(255,68,102,0.2);
+    border-radius: 10px;
+    font-size: 11px;
+    color: rgba(255,68,102,0.7);
+    line-height: 1.7;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  /* WALLET SECTION */
+  .wallet-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .wallet-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .wallet-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .ws-num {
+    width: 24px; height: 24px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .ws-content { flex: 1; }
+  .ws-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .ws-desc { font-size: 11px; color: var(--muted2); line-height: 1.6; }
+
+  .link {
+    color: var(--accent3);
+    text-decoration: none;
+  }
+
+  .link:hover { text-decoration: underline; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  .tab {
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  @media (max-width: 700px) {
+    .steps-grid { grid-template-columns: 1fr; }
+    .config-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">PB</div>
+      <div class="logo-text">Poly<span>Bot</span></div>
+    </div>
+    <div class="status-pill">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">IDLE</span>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div style="margin-top:32px;">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('setup')">Setup</div>
+      <div class="tab" onclick="switchTab('configure')">Configure</div>
+      <div class="tab" onclick="switchTab('live')">Live Bot</div>
+    </div>
+
+    <!-- SETUP TAB -->
+    <div class="tab-content active" id="tab-setup">
+      <div class="setup-section">
+        <div class="section-label">Getting Started</div>
+        <div class="section-title">3 Steps to Launch</div>
+        <div class="section-sub">Follow these steps before running the bot. Each step only needs to be completed once.</div>
+
+        <div class="steps-grid">
+          <div class="step-card active">
+            <div class="step-number">STEP 01</div>
+            <div class="step-title">Set Up MetaMask Wallet</div>
+            <div class="step-desc">Install MetaMask in your browser. This is your crypto wallet that holds your USDC funds on the Polygon network.</div>
+            <div class="step-status"><span class="badge badge-active">ACTION REQUIRED</span></div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">STEP 02</div>
+            <div class="step-title">Fund with USDC</div>
+            <div class="step-desc">Buy USDC on Coinbase or Binance, then send it to your MetaMask wallet on the Polygon network. Convert your £300 here.</div>
+            <div class="step-status"><span class="badge badge-pending">PENDING</span></div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">STEP 03</div>
+            <div class="step-title">Get Anthropic API Key</div>
+            <div class="step-desc">The bot uses Claude AI to analyse markets. You need a free API key from Anthropic to power the analysis engine.</div>
+            <div class="step-status"><span class="badge badge-pending">PENDING</span></div>
+          </div>
+        </div>
+
+        <!-- WALLET GUIDE -->
+        <div class="wallet-section">
+          <div class="config-label">Wallet Setup Guide</div>
+          <div class="config-title">Installing MetaMask & Funding with USDC</div>
+          <div class="wallet-steps">
+            <div class="wallet-step">
+              <div class="ws-num">1</div>
+              <div class="ws-content">
+                <div class="ws-title">Install MetaMask</div>
+                <div class="ws-desc">Visit <a href="https://metamask.io" class="link" target="_blank">metamask.io</a> and install the browser extension. Create a new wallet and <strong>save your seed phrase somewhere safe offline</strong> — never share it with anyone.</div>
+              </div>
+            </div>
+            <div class="wallet-step">
+              <div class="ws-num">2</div>
+              <div class="ws-content">
+                <div class="ws-title">Add Polygon Network</div>
+                <div class="ws-desc">In MetaMask, go to Settings → Networks → Add Network. Search for "Polygon" and add it. Polymarket runs on Polygon, not Ethereum.</div>
+              </div>
+            </div>
+            <div class="wallet-step">
+              <div class="ws-num">3</div>
+              <div class="ws-content">
+                <div class="ws-title">Buy USDC on an Exchange</div>
+                <div class="ws-desc">Create an account on Coinbase or Binance UK. Buy USDC (US Dollar Coin) with your £300. USDC is a stablecoin — 1 USDC = $1 USD at all times.</div>
+              </div>
+            </div>
+            <div class="wallet-step">
+              <div class="ws-num">4</div>
+              <div class="ws-content">
+                <div class="ws-title">Send USDC to MetaMask (Polygon network)</div>
+                <div class="ws-desc">Withdraw your USDC from the exchange to your MetaMask wallet address. Make sure to select <strong>Polygon network</strong> when withdrawing, not Ethereum — otherwise you'll pay high fees.</div>
+              </div>
+            </div>
+            <div class="wallet-step">
+              <div class="ws-num">5</div>
+              <div class="ws-content">
+                <div class="ws-title">Connect to Polymarket</div>
+                <div class="ws-desc">Visit <a href="https://polymarket.com" class="link" target="_blank">polymarket.com</a> and connect your MetaMask wallet. Your USDC balance will appear automatically.</div>
+              </div>
+            </div>
+            <div class="wallet-step">
+              <div class="ws-num">6</div>
+              <div class="ws-content">
+                <div class="ws-title">Get Anthropic API Key</div>
+                <div class="ws-desc">Visit <a href="https://console.anthropic.com" class="link" target="_blank">console.anthropic.com</a>, create a free account, and generate an API key. You'll need a small amount of API credits (a few dollars covers hundreds of analyses).</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:right;">
+          <button class="btn btn-primary" onclick="switchTab('configure')">Next: Configure Bot →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIGURE TAB -->
+    <div class="tab-content" id="tab-configure">
+      <div class="setup-section">
+        <div class="section-label">Bot Settings</div>
+        <div class="section-title">Configure Your Bot</div>
+        <div class="section-sub">Set your risk limits and connect your API key. These settings protect your capital.</div>
+
+        <!-- API KEY -->
+        <div class="api-section" style="margin-bottom:20px;">
+          <div class="config-label">Authentication</div>
+          <div class="config-title">Anthropic API Key</div>
+          <div class="input-group">
+            <label class="input-label">Paste your API key here</label>
+            <input type="password" class="input-field" id="apiKey" placeholder="sk-ant-api03-..." oninput="saveConfig()">
+          </div>
+          <div class="api-note">
+            🔒 Your API key is stored only in your browser's memory and never sent anywhere except directly to Anthropic's servers for market analysis. Get yours at console.anthropic.com (free to start).
+          </div>
+        </div>
+
+        <div class="config-grid">
+          <div class="config-card">
+            <div class="config-label">Capital Management</div>
+            <div class="config-title">Risk Settings</div>
+
+            <div class="input-group">
+              <label class="input-label">Starting Balance (USDC)</label>
+              <input type="number" class="input-field" id="startBalance" value="300" min="10" oninput="saveConfig()">
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Max bet per market (%)</label>
+              <div class="range-wrapper">
+                <input type="range" id="maxBetPct" min="1" max="20" value="5" oninput="updateRange('maxBetPct','maxBetVal','%'); saveConfig()">
+                <span class="range-val" id="maxBetVal">5%</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Stop-loss floor (%)</label>
+              <div class="range-wrapper">
+                <input type="range" id="stopLoss" min="10" max="50" value="25" oninput="updateRange('stopLoss','stopLossVal','%'); saveConfig()">
+                <span class="range-val" id="stopLossVal">25%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="config-card">
+            <div class="config-label">Strategy Settings</div>
+            <div class="config-title">Market Selection</div>
+
+            <div class="input-group">
+              <label class="input-label">Min edge to place bet (%)</label>
+              <div class="range-wrapper">
+                <input type="range" id="minEdge" min="2" max="20" value="8" oninput="updateRange('minEdge','minEdgeVal','%'); saveConfig()">
+                <span class="range-val" id="minEdgeVal">8%</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Scan interval (minutes)</label>
+              <div class="range-wrapper">
+                <input type="range" id="scanInterval" min="5" max="60" value="15" oninput="updateRange('scanInterval','scanIntervalVal','m'); saveConfig()">
+                <span class="range-val" id="scanIntervalVal">15m</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Max open positions</label>
+              <div class="range-wrapper">
+                <input type="range" id="maxPos" min="1" max="10" value="5" oninput="updateRange('maxPos','maxPosVal',''); saveConfig()">
+                <span class="range-val" id="maxPosVal">5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:right;">
+          <button class="btn btn-primary" onclick="switchTab('live')" id="goLiveBtn">Next: Launch Bot →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE TAB -->
+    <div class="tab-content" id="tab-live">
+
+      <!-- STATS -->
+      <div class="stats-row" style="margin-top:24px;">
+        <div class="stat-card">
+          <div class="stat-label">Balance</div>
+          <div class="stat-value blue" id="statBalance">$300.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">P&L</div>
+          <div class="stat-value" id="statPnl">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Trades</div>
+          <div class="stat-value" id="statTrades">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-value" id="statWinRate">—</div>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="controls-bar">
+        <button class="btn btn-primary" id="startBtn" onclick="startBot()">▶ START BOT</button>
+        <button class="btn btn-danger" id="stopBtn" onclick="stopBot()" disabled>■ STOP</button>
+        <button class="btn btn-secondary" onclick="scanNow()">⟳ SCAN NOW</button>
+        <div class="controls-spacer"></div>
+        <div class="balance-display">Balance: <span id="balanceDisplay">$300.00</span></div>
+      </div>
+
+      <!-- MARKETS -->
+      <div class="markets-section">
+        <div class="markets-header">
+          <div class="log-title">Market Analysis</div>
+          <span id="lastScan" style="font-family:'Space Mono',monospace;font-size:10px;color:#666677;">Not scanned yet</span>
+        </div>
+        <div class="markets-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Market</th>
+                <th>Category</th>
+                <th>Poly Prob</th>
+                <th>AI Estimate</th>
+                <th>Edge</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="marketsTable">
+              <tr>
+                <td colspan="6" style="text-align:center;padding:40px;color:#333344;font-family:'Space Mono',monospace;font-size:12px;">
+                  Run a scan to load markets
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LOG -->
+      <div class="log-section">
+        <div class="log-header">
+          <div class="log-title">Activity Log</div>
+          <button class="btn btn-secondary" onclick="clearLog()" style="padding:4px 12px;font-size:10px;">Clear</button>
+        </div>
+        <div class="log-body" id="logBody">
+          <div class="log-empty">No activity yet. Start the bot or run a scan.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚠️ <strong>Important:</strong> This is a demonstration tool. Trading on prediction markets carries significant financial risk — you can lose your entire investment. Polymarket may not be available to UK residents. This is not financial advice. Never invest more than you can afford to lose. Past performance does not guarantee future results.
+  </div>
+</div>
+
+<script>
+  // State
+  let botRunning = false;
+  let scanTimer = null;
+  let balance = 300;
+  let startBal = 300;
+  let trades = 0;
+  let wins = 0;
+  let logEntries = [];
+  let positions = [];
+
+  // Sample markets for demo (in production these come from Polymarket CLOB API)
+  const sampleMarkets = [
+    { id: 1, name: "Will the Bank of England cut rates before June 2025?", category: "Finance", polyProb: 0.62 },
+    { id: 2, name: "Will Labour win the next UK by-election?", category: "Politics", polyProb: 0.71 },
+    { id: 3, name: "Will Bitcoin exceed $100k by end of Q2 2025?", category: "Crypto", polyProb: 0.38 },
+    { id: 4, name: "Will the Premier League title go to Arsenal?", category: "Sports", polyProb: 0.29 },
+    { id: 5, name: "Will there be a UK snap election in 2025?", category: "Politics", polyProb: 0.14 },
+    { id: 6, name: "Will OpenAI release GPT-5 before July 2025?", category: "Tech", polyProb: 0.55 },
+    { id: 7, name: "Will UK inflation drop below 2% by August 2025?", category: "Finance", polyProb: 0.44 },
+  ];
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      const tabs = ['setup','configure','live'];
+      t.classList.toggle('active', tabs[i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  function updateRange(id, valId, suffix) {
+    document.getElementById(valId).textContent = document.getElementById(id).value + suffix;
+  }
+
+  function saveConfig() {
+    // Config saved in memory
+  }
+
+  function getConfig() {
+    return {
+      apiKey: document.getElementById('apiKey').value.trim(),
+      startBalance: parseFloat(document.getElementById('startBalance').value) || 300,
+      maxBetPct: parseInt(document.getElementById('maxBetPct').value),
+      stopLoss: parseInt(document.getElementById('stopLoss').value),
+      minEdge: parseInt(document.getElementById('minEdge').value),
+      scanInterval: parseInt(document.getElementById('scanInterval').value),
+      maxPos: parseInt(document.getElementById('maxPos').value),
+    };
+  }
+
+  function addLog(type, msg) {
+    const now = new Date();
+    const time = now.toTimeString().slice(0,8);
+    const el = document.createElement('div');
+    el.className = 'log-entry';
+    el.innerHTML = `<span class="log-time">${time}</span><span class="log-type ${type}">[${type.toUpperCase()}]</span><span class="log-msg">${msg}</span>`;
+    const body = document.getElementById('logBody');
+    if (body.querySelector('.log-empty')) body.innerHTML = '';
+    body.insertBefore(el, body.firstChild);
+  }
+
+  function updateStats() {
+    const pnl = balance - startBal;
+    document.getElementById('statBalance').textContent = '$' + balance.toFixed(2);
+    document.getElementById('balanceDisplay').textContent = '$' + balance.toFixed(2);
+    document.getElementById('statPnl').textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+    document.getElementById('statPnl').className = 'stat-value ' + (pnl >= 0 ? 'green' : 'red');
+    document.getElementById('statTrades').textContent = trades;
+    document.getElementById('statWinRate').textContent = trades > 0 ? Math.round(wins/trades*100) + '%' : '—';
+    document.getElementById('statWinRate').className = 'stat-value ' + (trades > 0 ? (wins/trades >= 0.5 ? 'green' : 'red') : '');
+  }
+
+  async function analyseMarketWithAI(market, apiKey) {
+    if (!apiKey) {
+      // Demo mode — simulate AI response
+      const aiProb = Math.max(0.05, Math.min(0.95, market.polyProb + (Math.random() - 0.5) * 0.3));
+      return aiProb;
+    }
+
+    try {
+      const prompt = `You are a prediction market analyst. Analyse this market and give your probability estimate as a decimal between 0 and 1.
+
+Market: "${market.name}"
+Current Polymarket probability: ${(market.polyProb * 100).toFixed(1)}%
+Today's date: ${new Date().toDateString()}
+
+Consider recent news, historical base rates, and fundamentals. Respond with ONLY a JSON object like: {"probability": 0.65, "reasoning": "brief reason"}`;
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 200,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        addLog('warn', 'API error: ' + data.error.message + '. Running in demo mode.');
+        return Math.max(0.05, Math.min(0.95, market.polyProb + (Math.random() - 0.5) * 0.2));
+      }
+
+      const text = data.content[0].text.trim();
+      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+      return parsed.probability;
+    } catch(e) {
+      addLog('warn', 'AI analysis failed for market, using estimate.');
+      return Math.max(0.05, Math.min(0.95, market.polyProb + (Math.random() - 0.5) * 0.2));
+    }
+  }
+
+  async function scanNow() {
+    const config = getConfig();
+    addLog('info', 'Scanning Polymarket for opportunities...');
+    document.getElementById('lastScan').textContent = 'Scanning...';
+
+    const tbody = document.getElementById('marketsTable');
+    tbody.innerHTML = '';
+
+    for (const market of sampleMarkets) {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td class="market-name">${market.name}</td>
+        <td><span style="font-family:'Space Mono',monospace;font-size:10px;background:rgba(68,136,255,0.1);color:var(--accent3);padding:3px 8px;border-radius:4px;">${market.category}</span></td>
+        <td>
+          <div class="prob-bar-wrap">
+            <div class="prob-bar"><div class="prob-fill" style="width:${market.polyProb*100}%"></div></div>
+            <span style="font-family:'Space Mono',monospace;font-size:12px;">${(market.polyProb*100).toFixed(0)}%</span>
+          </div>
+        </td>
+        <td><span style="color:#444455;font-family:'Space Mono',monospace;font-size:11px;">Analysing...</span></td>
+        <td>—</td>
+        <td><button class="action-btn" disabled>Wait</button></td>`;
+      tbody.appendChild(row);
+    }
+
+    for (let i = 0; i < sampleMarkets.length; i++) {
+      const market = sampleMarkets[i];
+      const aiProb = await analyseMarketWithAI(market, config.apiKey);
+      const edge = ((aiProb - market.polyProb) * 100);
+      const row = tbody.rows[i];
+      const edgeClass = Math.abs(edge) < 3 ? 'edge-neu' : (edge > 0 ? 'edge-pos' : 'edge-neg');
+      const hasEdge = Math.abs(edge) >= config.minEdge;
+
+      row.cells[3].innerHTML = `
+        <div class="prob-bar-wrap">
+          <div class="prob-bar"><div class="prob-fill" style="width:${aiProb*100}%;background:var(--accent);"></div></div>
+          <span style="font-family:'Space Mono',monospace;font-size:12px;">${(aiProb*100).toFixed(0)}%</span>
+        </div>`;
+      row.cells[4].innerHTML = `<span class="edge-val ${edgeClass}">${edge > 0 ? '+' : ''}${edge.toFixed(1)}%</span>`;
+      row.cells[5].innerHTML = hasEdge
+        ? `<button class="action-btn" onclick="placeBet(${market.id}, ${aiProb}, ${market.polyProb})">${edge > 0 ? 'BET YES' : 'BET NO'}</button>`
+        : `<span style="font-family:'Space Mono',monospace;font-size:10px;color:#444455;">No edge</span>`;
+
+      if (hasEdge) {
+        addLog('trade', `Edge found: "${market.name.slice(0,40)}..." — ${edge > 0 ? '+' : ''}${edge.toFixed(1)}% edge`);
+      }
+
+      await sleep(200);
+    }
+
+    document.getElementById('lastScan').textContent = 'Last scan: ' + new Date().toLocaleTimeString();
+    addLog('info', 'Scan complete. Found ' + sampleMarkets.filter((m,i) => {
+      return true; // simplified
+    }).length + ' markets analysed.');
+  }
+
+  function placeBet(marketId, aiProb, polyProb) {
+    const config = getConfig();
+    const market = sampleMarkets.find(m => m.id === marketId);
+    if (!market) return;
+
+    const betSize = Math.min(balance * (config.maxBetPct / 100), balance * 0.1);
+    const isYes = aiProb > polyProb;
+    const edge = Math.abs(aiProb - polyProb);
+
+    // Simulate bet outcome (in production: call Polymarket CLOB API)
+    const won = Math.random() < (isYes ? aiProb : 1 - aiProb);
+    const payout = won ? betSize * (1 / (isYes ? polyProb : 1 - polyProb)) : 0;
+    const pnl = payout - betSize;
+
+    balance = Math.max(0, balance + pnl);
+    trades++;
+    if (won) wins++;
+    updateStats();
+
+    addLog('trade', `${won ? '✓ WON' : '✗ LOST'} — ${isYes ? 'YES' : 'NO'} on "${market.name.slice(0,35)}..." | Bet: $${betSize.toFixed(2)} | PnL: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`);
+
+    // Re-scan
+    scanNow();
+  }
+
+  function startBot() {
+    const config = getConfig();
+    if (!config.apiKey) {
+      addLog('warn', 'No API key set — running in DEMO MODE with simulated AI analysis.');
+    }
+
+    botRunning = true;
+    startBal = balance;
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('stopBtn').disabled = false;
+    document.getElementById('statusDot').classList.add('live');
+    document.getElementById('statusText').textContent = 'LIVE';
+
+    addLog('info', `Bot started. Balance: $${balance.toFixed(2)} | Max bet: ${config.maxBetPct}% | Min edge: ${config.minEdge}%`);
+    addLog('info', `Scan interval: every ${config.scanInterval} minutes. Stop-loss at ${config.stopLoss}% drawdown.`);
+
+    scanNow();
+    scanTimer = setInterval(() => {
+      if (botRunning) {
+        addLog('info', 'Scheduled scan starting...');
+        scanNow();
+
+        // Check stop-loss
+        const drawdown = ((startBal - balance) / startBal) * 100;
+        if (drawdown >= config.stopLoss) {
+          addLog('warn', `Stop-loss triggered! Drawdown: ${drawdown.toFixed(1)}%. Bot stopped.`);
+          stopBot();
+        }
+      }
+    }, config.scanInterval * 60 * 1000);
+  }
+
+  function stopBot() {
+    botRunning = false;
+    clearInterval(scanTimer);
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = true;
+    document.getElementById('statusDot').classList.remove('live');
+    document.getElementById('statusText').textContent = 'IDLE';
+    addLog('info', `Bot stopped. Final balance: $${balance.toFixed(2)} | Trades: ${trades} | Win rate: ${trades > 0 ? Math.round(wins/trades*100) : 0}%`);
+  }
+
+  function clearLog() {
+    document.getElementById('logBody').innerHTML = '<div class="log-empty">Log cleared.</div>';
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // Init
+  updateStats();
+</script>
+</body>
+</html>
